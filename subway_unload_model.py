@@ -48,6 +48,7 @@ with DAG(
           + f"&& dbt run --models models/example/ods_client_cut.sql", # run the model!
       )
     
+# создание hub  структуры 
     
 
 

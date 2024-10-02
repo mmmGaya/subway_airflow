@@ -38,6 +38,7 @@ with DAG(
     # )
     #  выгрузка данный из внешнего источника в таблица dbt_schemf.ods_client
     #   test for commit aaaaaa
+    # one more test for commit method
 
     increm_hub = PostgresOperator(
         task_id = 'record_hub',

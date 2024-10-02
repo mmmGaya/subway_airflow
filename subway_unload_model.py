@@ -9,46 +9,47 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 
 with DAG(
-  dag_id="A_unload_subway_model", # The name that shows up in the UI
+  dag_id="A_unload_subway_model_develop", # The name that shows up in the UI
   start_date=datetime.datetime(2024, 9, 25),
   schedule_interval = '*/3 * * * *',# Start date of the DAG
   catchup=False,
   template_searchpath='/var/dags',
 ) as dag:
-    
-    # def _generate_query(**context):
-    #     with open('/var/dags/dags_arina/postgres_query.sql', 'w') as file:
-    #         file.write(f"INSERT INTO dbt_schema.metadata_airflow VALUES ('{context['run_id']}','{context['execution_date']}');\ncommit;")
 
-     
-        
-    # generate_query = PythonOperator(
-    # task_id="get_query",
-    # python_callable=_generate_query,
-    # dag=dag,
-    # )
-    
-    
-    # unload_table = PostgresOperator(
-    #     task_id = 'unload_source_table',
-    #     postgres_conn_id = 'dbt_postgres',
-    #     sql = 'subway_sqripts/unload_source_tab.sql',
-    #     dag = dag,
-        
-    # )
-    #  выгрузка данный из внешнего источника в таблица dbt_schemf.ods_client
-    #   test for commit aaaaaa
-    # one more test for commit method
-
-    increm_hub = PostgresOperator(
-        task_id = 'record_hub',
+ 
+    # измения в таблице с мета полями id_потока и время запуска
+    cut_ods_table = PostgresOperator(
+        task_id = 'get_query_cut',
         postgres_conn_id = 'dbt_postgres',
-        sql = 'subway_sqripts/increm_insert_hub.sql',
+        sql = 'subway_sqripts/update_metadata.sql',
         params = {"run_id" : "{{ run_id}}", "execution_date" : "{{ execution_date }}"},
         dag = dag,
     )
+
+# тестовый оператор, имитирует выгрузку данных в ods таблицу из таблицы в исходной системы
+    _test_insert_ods = PostgresOperator(
+        task_id = 'test_insert_ods',
+        postgres_conn_id = 'dbt_postgres',
+        sql = '''
+              insert into raw_source_subway
+              (select 
+              execution_date, 
+              'dbt_schema.start_client_test'::regclass::oid, 
+              s.* 
+              from start_client_test s, metadata_airflow ma)''',
+        dag = dag,
+    )
+
+#  запускаем dbt модель обрезка таблицы ods
+    cut_table_dbt = BashOperator(
+          task_id="cut_dbt",
+          bash_command=f"cd /home/anarisuto-12/dbt/subway_project" # Go to the path containing your dbt project
+          + '&& source /home/anarisuto-12/dbt/venv/bin/activate' # Load Pyenv
+          + f"&& dbt run --models models/example/ods_client_cut.sql", # run the model!
+      )
     
-  
     
-    
-    # generate_query >> write_to_postgres 
+
+
+
+    cut_ods_table >> _test_insert_ods >> cut_table_dbt

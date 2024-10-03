@@ -11,9 +11,9 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 with DAG(
   dag_id="A_unload_subway_model_develop", # The name that shows up in the UI
   start_date=datetime.datetime(2024, 9, 25),
-  schedule_interval = '*/3 * * * *',# Start date of the DAG
+  schedule_interval = '*/5 * * * *',# Start date of the DAG
   catchup=False,
-  template_searchpath='/var/dags',
+  template_searchpath='/var/dags/dags_arina/subway_arina_flow/subway_airflow',
 ) as dag:
 
  
@@ -48,9 +48,28 @@ with DAG(
           + f"&& dbt run --models models/example/ods_client_cut.sql", # run the model!
       )
     
-# создание hub  структуры 
+# слой Raw Vault
+    hub_compare_ins = PostgresOperator(
+        task_id = "update_hub",
+        postgres_conn_id = 'dbt_postgres',
+        sql = 'subway_sqripts/GPR_RV_H_CLIENT.sql',
+        dag = dag, 
+    )
     
+    satelite_compare_ins = PostgresOperator(
+        task_id = "update_satelite",
+        postgres_conn_id = 'dbt_postgres',
+        sql = 'subway_sqripts/GPR_RV_S_CLIENT.sql',
+        dag = dag, 
+    )
+    
+    eff_sat_compare_ins = PostgresOperator(
+        task_id = "update_eff_satelite",
+        postgres_conn_id = 'dbt_postgres',
+        sql = 'subway_sqripts/GPR_RV_S_CLIENT.sql',
+        dag = dag, 
+    )
 
 
 
-    cut_ods_table >> _test_insert_ods >> cut_table_dbt
+    cut_ods_table >> _test_insert_ods >> cut_table_dbt >> [hub_compare_ins, satelite_compare_ins]

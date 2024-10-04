@@ -66,10 +66,10 @@ with DAG(
     eff_sat_compare_ins = PostgresOperator(
         task_id = "update_eff_satelite",
         postgres_conn_id = 'dbt_postgres',
-        sql = 'subway_sqripts/GPR_RV_S_CLIENT.sql',
+        sql = 'subway_sqripts/GPR_RV_E_CLIENT.sql',
         dag = dag, 
     )
 
 
 
-    cut_ods_table >> _test_insert_ods >> cut_table_dbt >> [hub_compare_ins, satelite_compare_ins]
+    cut_ods_table >> _test_insert_ods >> cut_table_dbt >> [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins]

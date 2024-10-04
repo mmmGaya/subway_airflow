@@ -21,6 +21,7 @@ WHERE md5(id || '#' || oid) IN
             (SELECT
                 hub_key
             FROM 
+            -- если будут дубли вопрос (просмотреть)
                 (SELECT md5(id || '#' || oid) hub_key, md5(name || '#' || phone || '#' || city || '#' || birthday || '#' || age) hashdiff_key FROM ods_client_cut
                 except
                 SELECT client_rk, hashdiff_key FROM dbt_schema."GPR_RV_S_CLIENT"

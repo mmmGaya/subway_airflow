@@ -24,9 +24,46 @@ WHERE md5(id || '#' || oid) IN
             -- если будут дубли вопрос (просмотреть)
                 (SELECT md5(id || '#' || oid) hub_key, md5(name || '#' || phone || '#' || city || '#' || birthday || '#' || age) hashdiff_key FROM ods_client_cut
                 except
-                SELECT client_rk, hashdiff_key FROM dbt_schema."GPR_RV_S_CLIENT"
+                SELECT client_rk, hashdiff_key FROM dbt_schema."GPR_RV_S_CLIENT" where actual_flg = 1 and delete_flg = 0
                  )
             );
+
+INSERT INTO  dbt_schema."GPR_RV_S_CLIENT"
+select 
+	ma.run_id  dataflow_id,
+    ma.execution_date dataflow_dttm,
+    source_system_dk, 
+    client_rk, 
+    current_timestamp valid_from_dttm, 
+    hashdiff_key,
+    1 actual_flg,
+    1 delete_flg,
+    client_name_desc,
+    client_phone_desc,
+    client_city_desc,
+    client_city_dt,
+    client_age_cnt
+from 
+	dbt_schema."GPR_RV_S_CLIENT", dbt_schema.metadata_airflow ma
+where client_rk in
+(
+select 
+	client_rk
+from
+	(
+	select 
+		client_rk
+	from 
+		dbt_schema."GPR_RV_S_CLIENT"
+	 where delete_flg = 0 and actual_flg = 1
+    except
+    select 
+		md5(id || '#' || oid) client_rk
+	from 
+		ods_client_cut occ )
+		)
+	and actual_flg = 1;
+
 
 --   изменяем флаг актуальности для записи у которой поменялся атрибут
 UPDATE dbt_schema."GPR_RV_S_CLIENT"

@@ -19,10 +19,10 @@ FROM
             select source_system_dk, client_rk from dbt_schema."GPR_RV_H_CLIENT"
             )
     );
+
 COMMIT;
 
 
---  разобрать кейс из источника приходит две записи с одинаковым id 
 
 
 

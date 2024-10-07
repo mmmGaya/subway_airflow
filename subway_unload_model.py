@@ -11,7 +11,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 with DAG(
   dag_id="A_unload_subway_model_develop", # The name that shows up in the UI
   start_date=datetime.datetime(2024, 9, 25),
-  schedule_interval = '*/5 * * * *',# Start date of the DAG
+  schedule_interval = '*/3 * * * *',# Start date of the DAG
   catchup=False,
   template_searchpath='/var/dags/dags_arina/subway_arina_flow/subway_airflow',
 ) as dag:

@@ -11,7 +11,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 with DAG(
   dag_id="A_unload_subway_model_develop", # The name that shows up in the UI
   start_date=datetime.datetime(2024, 9, 25),
-  schedule_interval = '*/3 * * * *',# Start date of the DAG
+  schedule_interval = '*/5 * * * *',# Start date of the DAG
   catchup=False,
   template_searchpath='/var/dags/dags_arina/subway_arina_flow/subway_airflow',
 ) as dag:
@@ -69,7 +69,16 @@ with DAG(
         sql = 'subway_sqripts/GPR_RV_E_CLIENT.sql',
         dag = dag, 
     )
+    
+    unif_sal_compare_ins = PostgresOperator(
+        task_id = "update_sal",
+        postgres_conn_id = 'dbt_postgres',
+        sql = 'subway_sqripts/GPR_BV_A_CLIENT.sql',
+        dag = dag, 
+    )
 
 
 
-    cut_ods_table >> _test_insert_ods >> cut_table_dbt >> [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins]
+    cut_ods_table >> _test_insert_ods >> cut_table_dbt >> [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] 
+
+    [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] >> unif_sal_compare_ins

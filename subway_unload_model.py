@@ -77,8 +77,15 @@ with DAG(
         dag = dag, 
     )
 
+    pit_compare_ins = PostgresOperator(
+        task_id = "update_pit",
+        postgres_conn_id = 'dbt_postgres',
+        sql = 'subway_sqripts/GPR_BV_P_CLIENT.sql',
+        dag = dag, 
+    )
+
 
 
     cut_ods_table >> _test_insert_ods >> cut_table_dbt >> [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] 
 
-    [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] >> unif_sal_compare_ins
+    [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] >> unif_sal_compare_ins >> pit_compare_ins

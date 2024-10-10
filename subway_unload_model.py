@@ -84,8 +84,15 @@ with DAG(
         dag = dag, 
     )
 
+    dim_compare_ins = PostgresOperator(
+        task_id = "update_dim",
+        postgres_conn_id = 'dbt_postgres',
+        sql = 'subway_sqripts/GPR_EM_DIM_CLIENT.sql',
+        dag = dag, 
+    )
+
 
 
     cut_ods_table >> _test_insert_ods >> cut_table_dbt >> [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] 
 
-    [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] >> unif_sal_compare_ins >> pit_compare_ins
+    [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] >> unif_sal_compare_ins >> pit_compare_ins >> dim_compare_ins

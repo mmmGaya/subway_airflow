@@ -9,7 +9,7 @@ select ac.client_rk client_rk, max(sc.valid_from_dttm) mx_dt
 from "GPR_BV_A_CLIENT" ac join dbt_schema."GPR_RV_S_CLIENT" sc on ac.x_client_rk = sc.client_rk
 group by  ac.client_rk) tb, dbt_schema.metadata_airflow
 where client_rk in (select client_rk from "GPR_BV_P_CLIENT") 
-  and mx_dt > (select max (client_subway_star_vf_dttm) from "GPR_BV_P_CLIENT" where client_rk = tb.client_rk)
+  and mx_dt > (select max (client_subway_star_vf_dttm) from "GPR_BV_P_CLIENT" where client_rk = tb.client_rk);
 
   
 -- обновление конца периода
@@ -20,7 +20,7 @@ where (client_rk, valid_from_dttm) in (select client_rk, valid_from_dttm
 											(select client_rk, valid_from_dttm, valid_to_dttm, client_subway_star_vf_dttm,
 												   lead(valid_from_dttm, 1, valid_to_dttm) over (partition by client_rk, valid_to_dttm order by valid_from_dttm) ld
 											from "GPR_BV_P_CLIENT")
-											where valid_to_dttm <> ld)
+											where valid_to_dttm <> ld);
 
 -- вставка записей о новых экземпляров
 insert into "GPR_BV_P_CLIENT"					   	  
@@ -42,3 +42,5 @@ from "GPR_BV_A_CLIENT" ac join dbt_schema."GPR_RV_S_CLIENT" sc on ac.x_client_rk
 group by ac.client_rk), dbt_schema.metadata_airflow
 where client_rk not in (select client_rk from "GPR_BV_P_CLIENT"))
 order by client_rk, valid_from_dttm;
+
+commit;

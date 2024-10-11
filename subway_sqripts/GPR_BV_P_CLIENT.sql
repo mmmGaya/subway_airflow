@@ -29,7 +29,7 @@ where (client_rk, valid_from_dttm) in (select client_rk, valid_from_dttm
 
 -- обновление конца периода в случае, когда экземпляр сущности удален
 update dbt_schema."GPR_BV_P_CLIENT"								
-set valid_to_dttm = valid_from_dttm, (dataflow_id, dataflow_dttm) = (select run_id, execution_date from dbt_schema.metadata_airflow)
+set (dataflow_id, dataflow_dttm, valid_to_dttm) = (select run_id, execution_date, execution_date from dbt_schema.metadata_airflow)
 where (client_rk, valid_from_dttm) in (select ac.client_rk a, max(valid_from_dttm)
 										from dbt_schema."GPR_RV_S_CLIENT" sc 
 										join dbt_schema."GPR_BV_A_CLIENT" ac on sc.client_rk = ac.x_client_rk and (delete_flg = 1 or actual_flg = 0)

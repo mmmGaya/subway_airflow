@@ -42,7 +42,7 @@ select
 	1 delete_flg,
 	1 actual_flg, 
 	source_system_dk,
-	current_timestamp valid_from_dttm
+	ma.execution_date valid_from_dttm
 from 
 	dbt_schema."GPR_RV_E_CLIENT", dbt_schema.metadata_airflow ma
 where client_rk in

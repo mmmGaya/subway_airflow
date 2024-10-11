@@ -24,10 +24,47 @@ from
 	)
 	, dbt_schema.metadata_airflow ma ;
 
+
+
+-- происходит переунификация записи
+-- доработать выполняется но ничего не меняет 
+UPDATE dbt_schema."GPR_BV_A_CLIENT" a_main
+SET client_rk  =
+	   (select 
+			coalesce (min(unif_key), not_unif_key)
+		from 
+				(
+				select 
+					s2.client_rk not_unif_key
+			  	  , s1.client_rk  unif_key
+				from 
+					dbt_schema."GPR_RV_S_CLIENT" s2
+				left join 
+				dbt_schema."GPR_RV_S_CLIENT" s1
+			 	on s1.client_rk != s2.client_rk and s1.client_name_desc = s2.client_name_desc and s1.client_phone_desc = s2.client_phone_desc
+			 	where s2.client_rk = a_main.x_client_rk and s2.actual_flg = 1
+				)
+			where not_unif_key = a_main.x_client_rk
+			group by not_unif_key
+			)
+WHERE  a_main.x_client_rk in 
+				(select 
+					client_rk
+				from 
+					(
+					select 
+					  client_name_desc name 
+					, client_phone_desc phone
+					, lag(client_name_desc, 1, client_name_desc) over(partition by client_rk order by valid_from_dttm) old_name
+					, lag(client_phone_desc, 1, client_phone_desc) over(partition by client_rk order by valid_from_dttm) old_phone
+					, actual_flg 
+					, valid_from_dttm
+					, client_rk 
+					from 
+						dbt_schema."GPR_RV_S_CLIENT" 
+					)
+				where (name != old_name or phone != old_phone ) and actual_flg = 1);
+
+
 commit;
 
---  придумать единный алгоритм формиравание мастер ключа 
-
--- вопрос который задать (может ли прийти dataflow_id, dataflow_dttm равное null)
-
--- логика выбора мастер-ключа, выбирается самый минимальный из выгрузки и назначен мастер источник 

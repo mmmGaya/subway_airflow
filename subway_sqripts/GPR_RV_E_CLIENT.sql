@@ -9,7 +9,7 @@ select
 	0 delete_flg,
 	1 actual_flg, 
 	oid source_system_dk,
-	current_timestamp valid_from_dttm
+	ma.execution_date valid_from_dttm
 from 
 	ods_client_cut, dbt_schema.metadata_airflow ma
 where md5(id || '#' || oid) in

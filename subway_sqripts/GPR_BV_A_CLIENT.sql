@@ -7,8 +7,8 @@ select
 from
 	(
 	select 
-		s1.client_rk x_client_rk,
-		min(s2.client_rk) client_rk
+		distinct s1.client_rk x_client_rk,
+		first_value(s2.client_rk) over(partition by s1.client_rk order by s2.valid_from_dttm, s2.client_rk) client_rk
 	from 
 		dbt_schema."GPR_RV_S_CLIENT" s1
 		join 
@@ -20,23 +20,24 @@ from
 		except 
 		select x_client_rk from dbt_schema."GPR_BV_A_CLIENT"
 		)
-	group by s1.client_rk
 	)
 	, dbt_schema.metadata_airflow ma ;
 
 
 
 -- происходит переунификация записи
--- доработать выполняется но ничего не меняет 
+
+
 UPDATE dbt_schema."GPR_BV_A_CLIENT" a_main
 SET client_rk  =
 	   (select 
-			coalesce (min(unif_key), not_unif_key)
+			distinct coalesce (first_value(unif_key) over(partition by not_unif_key order by valid_from_dttm, unif_key), not_unif_key)
 		from 
 				(
 				select 
 					s2.client_rk not_unif_key
 			  	  , s1.client_rk  unif_key
+			  	  , s1.valid_from_dttm 
 				from 
 					dbt_schema."GPR_RV_S_CLIENT" s2
 				left join 
@@ -45,7 +46,6 @@ SET client_rk  =
 			 	where s2.client_rk = a_main.x_client_rk and s2.actual_flg = 1
 				)
 			where not_unif_key = a_main.x_client_rk
-			group by not_unif_key
 			)
 WHERE  a_main.x_client_rk in 
 				(select 
@@ -64,7 +64,6 @@ WHERE  a_main.x_client_rk in
 						dbt_schema."GPR_RV_S_CLIENT" 
 					)
 				where (name != old_name or phone != old_phone ) and actual_flg = 1);
-
-
+	
 commit;
 

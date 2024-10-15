@@ -12,6 +12,7 @@ with DAG(
   dag_id="A_unload_subway_model_develop", # The name that shows up in the UI
   start_date=datetime.datetime(2024, 9, 25),
   schedule_interval = '*/5 * * * *',# Start date of the DAG
+
   catchup=False,
   template_searchpath='/var/dags/dags_arina/subway_arina_flow/subway_airflow',
 ) as dag:
@@ -26,7 +27,7 @@ with DAG(
         dag = dag,
     )
 
-# тестовый оператор, имитирует выгрузку данных в ods таблицу из таблицы в исходной системы
+# т выгрузка данных в ods таблицу из таблицы в исходной системы
     _test_insert_ods = PostgresOperator(
         task_id = 'test_insert_ods',
         postgres_conn_id = 'dbt_postgres',
@@ -70,29 +71,31 @@ with DAG(
         dag = dag, 
     )
     
-    unif_sal_compare_ins = PostgresOperator(
-        task_id = "update_sal",
-        postgres_conn_id = 'dbt_postgres',
-        sql = 'subway_sqripts/GPR_BV_A_CLIENT.sql',
-        dag = dag, 
-    )
+# слой Bussiness Vault
+#     unif_sal_compare_ins = PostgresOperator(
+#         task_id = "update_sal",
+#         postgres_conn_id = 'dbt_postgres',
+#         sql = 'subway_sqripts/GPR_BV_A_CLIENT.sql',
+#         dag = dag, 
+#     )
 
-    pit_compare_ins = PostgresOperator(
-        task_id = "update_pit",
-        postgres_conn_id = 'dbt_postgres',
-        sql = 'subway_sqripts/GPR_BV_P_CLIENT.sql',
-        dag = dag, 
-    )
+#     pit_compare_ins = PostgresOperator(
+#         task_id = "update_pit",
+#         postgres_conn_id = 'dbt_postgres',
+#         sql = 'subway_sqripts/GPR_BV_P_CLIENT.sql',
+#         dag = dag, 
+#     )
 
-    dim_compare_ins = PostgresOperator(
-        task_id = "update_dim",
-        postgres_conn_id = 'dbt_postgres',
-        sql = 'subway_sqripts/GPR_EM_DIM_CLIENT.sql',
-        dag = dag, 
-    )
+# # Измерение 
+#     dim_compare_ins = PostgresOperator(
+#         task_id = "update_dim",
+#         postgres_conn_id = 'dbt_postgres',
+#         sql = 'subway_sqripts/GPR_EM_DIM_CLIENT.sql',
+#         dag = dag, 
+#     )
 
 
 
     cut_ods_table >> _test_insert_ods >> cut_table_dbt >> [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] 
 
-    [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] >> unif_sal_compare_ins >> pit_compare_ins >> dim_compare_ins
+    # [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] >> unif_sal_compare_ins >> pit_compare_ins >> dim_compare_ins

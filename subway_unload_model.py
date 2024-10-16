@@ -8,26 +8,30 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 
+
+
+
+
 with DAG(
   dag_id="A_unload_subway_model_develop", # The name that shows up in the UI
   start_date=datetime.datetime(2024, 9, 25),
-  schedule_interval = '*/5 * * * *',# Start date of the DAG
-
+  schedule_interval = '*/3 * * * *',# Start date of the DAG
   catchup=False,
   template_searchpath='/var/dags/dags_arina/subway_arina_flow/subway_airflow',
 ) as dag:
 
+
  
     # измения в таблице с мета полями id_потока и время запуска
-    cut_ods_table = PostgresOperator(
-        task_id = 'get_query_cut',
+    update_metadate = PostgresOperator(
+        task_id = 'update_metadate',
         postgres_conn_id = 'dbt_postgres',
         sql = 'subway_sqripts/update_metadata.sql',
         params = {"run_id" : "{{ run_id}}", "execution_date" : "{{ execution_date }}"},
         dag = dag,
     )
-
-# т выгрузка данных в ods таблицу из таблицы в исходной системы
+    
+#  выгрузка данных в ods таблицу из таблицы в исходной системы
     _test_insert_ods = PostgresOperator(
         task_id = 'test_insert_ods',
         postgres_conn_id = 'dbt_postgres',
@@ -41,13 +45,17 @@ with DAG(
         dag = dag,
     )
 
+
 #  запускаем dbt модель обрезка таблицы ods
     cut_table_dbt = BashOperator(
           task_id="cut_dbt",
           bash_command=f"cd /home/anarisuto-12/dbt/subway_project" # Go to the path containing your dbt project
           + '&& source /home/anarisuto-12/dbt/venv/bin/activate' # Load Pyenv
-          + f"&& dbt run --models models/example/ods_client_cut.sql", # run the model!
+          + "&& dbt run  --models models/example/ods_client_cut.sql --vars '{execution_date : {{ execution_date }}, run_id : {{ run_id }} }' ", # run the model!
+          dag = dag,
       )
+    
+    
     
 # слой Raw Vault
     hub_compare_ins = PostgresOperator(
@@ -96,6 +104,6 @@ with DAG(
 
 
 
-    cut_ods_table >> _test_insert_ods >> cut_table_dbt >> [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] 
+    update_metadate >> _test_insert_ods >> cut_table_dbt >>  [hub_compare_ins , satelite_compare_ins, eff_sat_compare_ins] 
 
-    [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] >> unif_sal_compare_ins >> pit_compare_ins >> dim_compare_ins
+    [hub_compare_ins, satelite_compare_ins, eff_sat_compare_ins] >> unif_sal_compare_ins >> pit_compare_ins >> dim_compare_ins 

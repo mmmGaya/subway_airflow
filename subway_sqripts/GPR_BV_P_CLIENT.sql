@@ -1,4 +1,4 @@
--- вставка новых значений, если записи об экземпляре ест ьи данные там изменились
+-- вставка новых значений, если записи об экземпляре есть и данные там изменились
 insert into dbt_schema."GPR_BV_P_CLIENT"				   	  
 select run_id dataflow_id, execution_date dataflow_dtt, client_rk, 
        mx_dt valid_from_dttm,
@@ -9,7 +9,7 @@ select ac.client_rk client_rk, max(sc.valid_from_dttm) mx_dt
 from dbt_schema."GPR_BV_A_CLIENT" ac join dbt_schema."GPR_RV_S_CLIENT" sc on ac.x_client_rk = sc.client_rk and sc.delete_flg <> 1 and sc.actual_flg = 1
 group by  ac.client_rk) tb, dbt_schema.metadata_airflow
 where client_rk in (select client_rk from dbt_schema."GPR_BV_P_CLIENT") 
-  and mx_dt > (select max (client_subway_star_vf_dttm) from dbt_schema."GPR_BV_P_CLIENT" where client_rk = tb.client_rk);;
+  and mx_dt > (select max (client_subway_star_vf_dttm) from dbt_schema."GPR_BV_P_CLIENT" where client_rk = tb.client_rk);
 
   
 -- обновление конца периода в случае, когда экземпляр сущности не удален

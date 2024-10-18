@@ -99,4 +99,4 @@ with DAG(
     )
 
 #upd_meta >> insert_from_ora_to_csv >> insert_to_csv >> insert_into_postgres 
-upd_meta >> insert_from_ora_to_csv >> insert_into_postgres
+upd_meta >> insert_from_ora_to_csv >> insert_into_postgres 
